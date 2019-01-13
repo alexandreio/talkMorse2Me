@@ -51,6 +51,6 @@ io.on('connection', socket => {
 
 });
 
-http.listen(80, () => {
-  console.log('Server running at port 80');
+http.listen(process.env.PORT || 3000, function(){
+  console.log("Express server listening on port %d in %s mode", this.address().port, app.settings.env);
 });
