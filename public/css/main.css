@@ -168,6 +168,8 @@ main {
 @media only screen and (max-width: 800px) {
 
   main {
+    width: 93%;
+    margin: 0 auto;
     padding: 0.5rem;
   }
 
@@ -190,13 +192,13 @@ main {
   }
   
   .message-input {
-    width: 77%;
+    width: 73%;
   }
 
   #swapMsg {
     position: absolute;
     top: 1rem;
-    right: -0.7rem;
+    right: .7rem;
     font-size: 2rem;
   }
 
