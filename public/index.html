@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="X-UA-Compatible" content="ie=edge">
+  <title>Talk Morse 2 Me!</title>
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+  <main>
+    <form action="" class="username-form hide">
+        <div class="form-control form-username">
+            <label for="u">Your username</label>
+            <input id="u" name="u" placeholder="Your username..." autocomplete="off" autofocus/>
+            <button id="create-username">Create</button>
+        </div>
+    </form>
+    <ul class="messages"></ul>
+    <div class="chatInfo"></div>
+    <form action="">
+      <div class=message-user>
+          <input class="message-input" id="m" placeholder="Type your message" autocomplete="off" autofocus/><button id="send-message">Send</button>
+      </div>
+    </form>
+    <button data-op="0" id="swapMsg">Show Messages</button>
+  </main>
+  <script src="/socket.io/socket.io.js"></script>
+  <script>
+    const LETTERS = [ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', ',', ':', '?', '\'', '-', '/', '(', ')', '"', '@', '=', ' '];
+    const CODES = [ '.-', '-...', '-.-.', '-..', '.', '..-.', '--.', '....', '..', '.---', '-.-', '.-..', '--', '-.', '---', '.--.', '--.-', '.-.', '...', '-', '..-', '...-', '.--', '-..-', '-.--', '--..', '.----', '..---', '...--', '....-', '.....', '-....', '--...', '---..', '----.', '-----', '.-.-.-', '--..--', '---...', '..--..', '.----.', '-....-', '-..-.', '-.--.-', '-.--.-', '.-..-.', '.--.-.', '-...-', '/'];
+
+    const textToMorse = (message) => {
+      return message.split('').map((l, i) => {
+        const letterIndex = LETTERS.findIndex(i => i === l);
+        return CODES[letterIndex];
+      }).join(' ');
+    }
+
+    const morseToText = (message) => {
+      return message.split(' ').map((c, i) => {
+        const codeIndex = CODES.findIndex(i => i === c);
+        return LETTERS[codeIndex];
+      }).join('');
+    }    
+
+    const createUsername = (socket) => {
+      const usernameForm = document.querySelector('.username-form');
+      const b = document.querySelector('#create-username');
+
+      usernameForm.className = 'username-form';
+      
+      b.addEventListener('click', e => {
+        e.preventDefault();
+        const usernameInput = document.querySelector('#u');
+        const username = usernameInput.value;
+
+        localStorage.setItem('username', username);
+        socket.emit('setUsername', username);
+
+        usernameForm.className += ' hide';
+        return false;
+      });
+    }
+
+    {
+      const socket = io();
+      const m = document.querySelector('#m');
+      const sendButton = document.querySelector('#send-message');
+      const chatInfo = document.querySelector('.chatInfo');
+      const swapMsg = document.querySelector('#swapMsg');
+      const ul = document.querySelector('ul');
+      
+      let username = localStorage.getItem('username');
+      let typing = false;
+      let lastTypingTime;
+
+      // creates the user
+      if(!username) {
+        createUsername(socket);
+        username = localStorage.getItem('username');
+      }else {
+        socket.emit('setUsername', username);
+      }
+      
+      socket.on('userConnected', username => {
+        if(username.username !== username) {
+          chatInfo.innerHTML = `${username.username} joined...`;
+          setTimeout(() => {
+            chatInfo.innerHTML = '';
+          }, 1200);
+        }
+      });
+
+      // emit user is typing
+      m.addEventListener('keydown', e => {
+        if(!typing && e.target.value.trim().length > 0) {
+          typing = true;
+          socket.emit('typing');
+        }
+        
+        lastTypingTime = (new Date()).getTime();
+        setTimeout(() => {
+          const typingTimer = (new Date()).getTime();
+          const timeDiff = typingTimer - lastTypingTime;
+
+          if(timeDiff > 500 && typing) {
+            socket.emit('stopTyping');
+            typing = false;
+          }
+        }, 500);
+
+      });
+
+      socket.on('typing', username => {
+        chatInfo.innerHTML = `${username.username} is typing...`;
+      });
+
+      socket.on('stopTyping', username => {
+        chatInfo.innerHTML = '';
+      });
+
+      //send message
+      
+      sendButton.addEventListener('click', e => {
+        e.preventDefault();
+        const m = document.querySelector('#m');
+        const msg = m.value;
+        const morseMsg = textToMorse(msg);
+        const li = document.createElement('li');
+        li.dataset.username = username;
+        li.dataset.normalMsg = msg;
+        li.dataset.MorseMsg = morseMsg;
+        li.innerHTML = `<b>${username}:</b> ${morseMsg}`;
+        ul.appendChild(li);
+        socket.emit('sendMessage', {username: username, message: msg, morseMsg: morseMsg});
+        m.value = '';
+        return false;
+      });
+
+      swapMsg.addEventListener('click', e => {
+        e.preventDefault();
+        const changeToOp = parseInt(e.target.dataset.op);
+        const liEls = document.querySelectorAll('li');
+        console.log(liEls.length);
+
+        liEls.forEach(li => {
+          li.innerHTML = `<b>${li.dataset.username}:</b> ${changeToOp === 0 ? li.dataset.normalMsg: li.dataset.MorseMsg}`;
+        });
+
+        e.target.dataset.op = changeToOp ^ 1;
+        if(e.target.dataset.op === 1) {
+          e.target.innerText = 'Hide Messages';
+        }else {
+          e.target.innerText = 'Show Messages';
+        }
+
+
+        return false;
+      });
+
+
+      socket.on('reciveMessage', data => {
+        console.log(data);
+        const li = document.createElement('li');
+        li.dataset.username = data.username;
+        li.dataset.normalMsg = data.message;
+        li.dataset.morseMsg = data.morseMsg;
+        li.innerHTML = `<b>${data.username}:</b> ${data.morseMsg}`;
+        ul.appendChild(li);
+      });
+    }
+  </script>  
+</body>
+</html>
