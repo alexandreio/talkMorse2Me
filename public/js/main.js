@@ -124,6 +124,7 @@ const sendMessageHandler = (e, username, socket) => {
 
   const li = createLi({op, username, normalMsg, morseMsg});
   ul.appendChild(li);
+  ul.scrollTop = 33 * ul.children.length + 1;
   socket.emit('sendMessage', {username, normalMsg, morseMsg});
   m.value = '';
 
@@ -137,11 +138,13 @@ const reciveMessageHandler = data => {
   const li = createLi({op, username, normalMsg, morseMsg});
   playNotification();
   ul.append(li);
+  ul.scrollTop = 33 * ul.children.length + 1;
 }
 
 const swapMsgsHandler = e => {
   e.preventDefault();
-
+  
+  const swapMsg = document.querySelector('#swapMsg');
   const op = getSwapMsgOp();
   const liEls = document.querySelectorAll('li');
   
@@ -150,11 +153,11 @@ const swapMsgsHandler = e => {
     li.innerHTML = `<b>${username}:</b> ${op === 0 ? normalMsg: morseMsg}`;
   });
 
-  e.target.parentNode.dataset.op = op ^ 1;
-  if(parseInt(e.target.parentNode.dataset.op) === 1) {
-    e.target.parentNode.innerHTML = '<i class="fas fa-eye-slash"></i>';
+  swapMsg.dataset.op = op ^ 1;
+  if(parseInt(swapMsg.dataset.op) === 1) {
+    swapMsg.innerHTML = '<i class="fas fa-eye-slash"></i>';
   }else {
-    e.target.parentNode.innerHTML = '<i class="fas fa-eye"></i>';
+    swapMsg.innerHTML = '<i class="fas fa-eye"></i>';
   }
 
   return false;

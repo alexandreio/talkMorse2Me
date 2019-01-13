@@ -86,9 +86,9 @@ main {
 .chatInfo {
   color: #fff;
   position: relative;
-  margin-top: -35px;
+  margin-top: -1px;
   padding: .35rem;
-  width: 43.6rem;
+  width: 44.7rem;
   height: 20px;
   line-height: 20px;
   background: #2a2e33; /*#2a2e33*/
