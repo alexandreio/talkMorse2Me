@@ -136,6 +136,11 @@
 			const ul = document.querySelector('ul');
 			const op = getSwapMsgOp();
 			const normalMsg = m.value.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+
+			if(normalMsg.length <= 0) {
+				return false;
+			}
+
 			const morseMsg = morseToText(normalMsg);
 
 			const li = createLi({op, username, normalMsg, morseMsg});
