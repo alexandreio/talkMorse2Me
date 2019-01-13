@@ -7,6 +7,16 @@ const io = require('socket.io')(http);
 
 const bodyParser = require('body-parser');
 
+const getTime = () => {
+  const d = new Date();
+
+  return `[${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()} ${d.getHours()}:${d.getMinutes()}:${d.getSeconds()}]`;
+}
+
+const log = (msg) => {
+  const t = getTime();
+  console.log(`${t}: ${msg}`);
+}
 
 app.use(bodyParser.urlencoded({extended: false}));
 app.use(express.static(path.join(__dirname, 'public')));
@@ -18,27 +28,28 @@ app.get('/', (req, res, next) => {
 io.on('connection', socket => {
   socket.username = '';
 
-  socket.on('disconnect', () => {
-    console.log(`The user ${socket.username} disconnect`);
-  });
 
   socket.on('setUsername', username => {
-    console.log(`A new user was added with the name: ${username}`);
     socket.username = username;
+    log(`Set username: ${username}`);
     socket.broadcast.emit('userConnected', {
       username: socket.username
     });
   });
 
+  socket.on('disconnect', () => {
+    log(`The user ${socket.username} disconnect`);
+  });
+
   socket.on('typing', () => {
-    console.log(`${socket.username} are typing...`);
+    log(`${socket.username} are typing...`);
     socket.broadcast.emit('typing', {
       username: socket.username
     });
   });
 
   socket.on('stopTyping', () => {
-    console.log(`${socket.username} stop typing`);
+    log(`${socket.username} stop typing`);
     socket.broadcast.emit('stopTyping', {
       username: socket.username
     });

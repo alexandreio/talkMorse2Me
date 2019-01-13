@@ -4,172 +4,214 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta http-equiv="X-UA-Compatible" content="ie=edge">
-  <title>Talk Morse 2 Me!</title>
+	<title>Talk Morse 2 Me!</title>
+	<link href="https://fonts.googleapis.com/css?family=Roboto|Roboto+Mono" rel="stylesheet">
+	<link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.6.3/css/all.css" integrity="sha384-UHRtZLI+pbxtHCWp1t77Bi1L4ZtiqrqD80Kn4Z8NTSRyMA2Fd33n5dQ8lWUE00s/" crossorigin="anonymous">
   <link rel="stylesheet" href="css/main.css">
 </head>
 <body>
   <main>
+		<h1 class="site-title">Talk Morse 2 Me</h1>
     <form action="" class="username-form hide">
         <div class="form-control form-username">
             <label for="u">Your username</label>
             <input id="u" name="u" placeholder="Your username..." autocomplete="off" autofocus/>
             <button id="create-username">Create</button>
         </div>
-    </form>
-    <ul class="messages"></ul>
-    <div class="chatInfo"></div>
+		</form>
+		<div class='messages-control'>
+			<ul class="messages"></ul>
+			<div class="chatInfo"></div>
+		</div>
     <form action="">
       <div class=message-user>
           <input class="message-input" id="m" placeholder="Type your message" autocomplete="off" autofocus/><button id="send-message">Send</button>
       </div>
     </form>
-    <button data-op="0" id="swapMsg">Show Messages</button>
+    <button data-op="0" id="swapMsg"><i class="fas fa-eye"></i></button>
   </main>
   <script src="/socket.io/socket.io.js"></script>
   <script>
-    const LETTERS = [ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', ',', ':', '?', '\'', '-', '/', '(', ')', '"', '@', '=', ' '];
-    const CODES = [ '.-', '-...', '-.-.', '-..', '.', '..-.', '--.', '....', '..', '.---', '-.-', '.-..', '--', '-.', '---', '.--.', '--.-', '.-.', '...', '-', '..-', '...-', '.--', '-..-', '-.--', '--..', '.----', '..---', '...--', '....-', '.....', '-....', '--...', '---..', '----.', '-----', '.-.-.-', '--..--', '---...', '..--..', '.----.', '-....-', '-..-.', '-.--.-', '-.--.-', '.-..-.', '.--.-.', '-...-', '/'];
+		const LETTERS = [ 'a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i', 'j', 'k', 'l', 'm', 'n', 'o', 'p', 'q', 'r', 's', 't', 'u', 'v', 'w', 'x', 'y', 'z', '1', '2', '3', '4', '5', '6', '7', '8', '9', '0', '.', ',', ':', '?', '\'', '-', '/', '(', ')', '"', '@', '=', ' '];
+		const CODES = [ '.-', '-...', '-.-.', '-..', '.', '..-.', '--.', '....', '..', '.---', '-.-', '.-..', '--', '-.', '---', '.--.', '--.-', '.-.', '...', '-', '..-', '...-', '.--', '-..-', '-.--', '--..', '.----', '..---', '...--', '....-', '.....', '-....', '--...', '---..', '----.', '-----', '.-.-.-', '--..--', '---...', '..--..', '.----.', '-....-', '-..-.', '-.--.-', '-.--.-', '.-..-.', '.--.-.', '-...-', '/'];
 
-    const textToMorse = (message) => {
-      return message.split('').map((l, i) => {
-        const letterIndex = LETTERS.findIndex(i => i === l);
-        return CODES[letterIndex];
-      }).join(' ');
-    }
+		const morseToText = message => {
+			return message.split('').map((l, i) => {
+				const letterIndex = LETTERS.findIndex(i => i === l);
+				return CODES[letterIndex];
+			}).join(' ');
+		}
 
-    const morseToText = (message) => {
-      return message.split(' ').map((c, i) => {
-        const codeIndex = CODES.findIndex(i => i === c);
-        return LETTERS[codeIndex];
-      }).join('');
-    }    
+		const createUsername = (cb) => {
+			const usernameForm = document.querySelector('.username-form');
+  		const b = document.querySelector('#create-username');
 
-    const createUsername = (socket) => {
-      const usernameForm = document.querySelector('.username-form');
-      const b = document.querySelector('#create-username');
+			usernameForm.className = 'username-form';
+			
+			b.addEventListener('click', e => {
+				e.preventDefault();
+				const usernameInput = document.querySelector('#u');
+				const username = usernameInput.value;
 
-      usernameForm.className = 'username-form';
-      
-      b.addEventListener('click', e => {
-        e.preventDefault();
-        const usernameInput = document.querySelector('#u');
-        const username = usernameInput.value;
+				localStorage.setItem('username', username);
+				usernameForm.className += ' hide';
+				cb();
+				return false;
+			});
+		}
 
-        localStorage.setItem('username', username);
-        socket.emit('setUsername', username);
+		const updateInnerHTML = (el, html) => {
+			const elDiv = document.querySelector(el);
+			elDiv.innerHTML = html;
+		}
 
-        usernameForm.className += ' hide';
-        return false;
-      });
-    }
+		const createLi = data => {
+			const {op, username, normalMsg, morseMsg} = data;
+			
+			const li = document.createElement('li');
+			li.dataset.username = username;
+			li.dataset.normalMsg = normalMsg;
+			li.dataset.morseMsg = morseMsg;
 
-    {
-      const socket = io();
-      const m = document.querySelector('#m');
-      const sendButton = document.querySelector('#send-message');
-      const chatInfo = document.querySelector('.chatInfo');
-      const swapMsg = document.querySelector('#swapMsg');
-      const ul = document.querySelector('ul');
-      
-      let username = localStorage.getItem('username');
-      let typing = false;
-      let lastTypingTime;
+			li.innerHTML = `<b>${username}:</b> ${op === 0 ? morseMsg : normalMsg}`;
+			return li;
+		}
 
-      // creates the user
-      if(!username) {
-        createUsername(socket);
-        username = localStorage.getItem('username');
-      }else {
-        socket.emit('setUsername', username);
-      }
-      
-      socket.on('userConnected', username => {
-        if(username.username !== username) {
-          chatInfo.innerHTML = `${username.username} joined...`;
-          setTimeout(() => {
-            chatInfo.innerHTML = '';
-          }, 1200);
-        }
-      });
+		const playNotification = () => {
+			const context = new AudioContext();
+			const o = context.createOscillator();
+			const  g = context.createGain();
+			o.type = "triangle";
+			o.connect(g);
+			g.connect(context.destination);
+			o.start(0);
+			g.gain.exponentialRampToValueAtTime(0.001, context.currentTime + 2);
+			o.stop(2);
+		}
 
-      // emit user is typing
-      m.addEventListener('keydown', e => {
-        if(!typing && e.target.value.trim().length > 0) {
-          typing = true;
-          socket.emit('typing');
-        }
-        
-        lastTypingTime = (new Date()).getTime();
-        setTimeout(() => {
-          const typingTimer = (new Date()).getTime();
-          const timeDiff = typingTimer - lastTypingTime;
+		const getSwapMsgOp = () => {
+			const swapMsg = document.querySelector('#swapMsg');
+			return parseInt(swapMsg.dataset.op);
+		}
 
-          if(timeDiff > 500 && typing) {
-            socket.emit('stopTyping');
-            typing = false;
-          }
-        }, 500);
+		const userConnectedHandler = (data, username) => {
+			if(data.username !== username) {
+				updateInnerHTML('.chatInfo', `${data.username} has joined...`);
+				setTimeout(() => {
+					updateInnerHTML('.chatInfo', '');
+				}, 1200);
+			}
+		}
 
-      });
+		const userIsTypingHandler = (e, socket) => {
+			let typing = false;
+			let msg = e.target.value.trim();
 
-      socket.on('typing', username => {
-        chatInfo.innerHTML = `${username.username} is typing...`;
-      });
+			if(!typing && msg.length > 0) {
+				typing = true;
+				socket.emit('typing');
+			}else {
+				socket.emit('stopTyping');
+				typing = false;
+			}
 
-      socket.on('stopTyping', username => {
-        chatInfo.innerHTML = '';
-      });
+			let = lastTypingTime = (new Date()).getTime();
+			setTimeout(() => {
+				const typingTimer = (new Date()).getTime();
+				const timeDiff = typingTimer - lastTypingTime;
 
-      //send message
-      
-      sendButton.addEventListener('click', e => {
-        e.preventDefault();
-        const op = parseInt(document.querySelector('#swapMsg').dataset.op);
-        const m = document.querySelector('#m');
-        const msg = m.value.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
-        const morseMsg = textToMorse(msg);
-        const li = document.createElement('li');
-        li.dataset.username = username;
-        li.dataset.normalMsg = msg;
-        li.dataset.MorseMsg = morseMsg;
-        li.innerHTML = `<b>${username}:</b> ${op === 0 ? morseMsg : msg}`;
-        ul.appendChild(li);
-        socket.emit('sendMessage', {username: username, message: msg, morseMsg: morseMsg});
-        m.value = '';
-        return false;
-      });
+				if(timeDiff > 500 && typing) {
+					socket.emit('stopTyping');
+					typing = false;
+				}
 
-      swapMsg.addEventListener('click', e => {
-        e.preventDefault();
-        const changeToOp = parseInt(e.target.dataset.op);
-        const liEls = document.querySelectorAll('li');
+			}, 500);
 
-        liEls.forEach(li => {
-          li.innerHTML = `<b>${li.dataset.username}:</b> ${changeToOp === 0 ? li.dataset.normalMsg: li.dataset.MorseMsg}`;
-        });
+		}
 
-        e.target.dataset.op = changeToOp ^ 1;
-        if(e.target.dataset.op === 1) {
-          e.target.innerText = 'Hide Messages';
-        }else {
-          e.target.innerText = 'Show Messages';
-        }
+		const sendMessageHandler = (e, username, socket) => {
+			e.preventDefault();
+			
+			const m = document.querySelector('#m');
+			const ul = document.querySelector('ul');
+			const op = getSwapMsgOp();
+			const normalMsg = m.value.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
+			const morseMsg = morseToText(normalMsg);
+
+			const li = createLi({op, username, normalMsg, morseMsg});
+			ul.appendChild(li);
+			socket.emit('sendMessage', {username, normalMsg, morseMsg});
+			m.value = '';
+
+			return false;
+		}
+
+		const reciveMessageHandler = data => {
+			const op = getSwapMsgOp();
+			const ul = document.querySelector('ul');
+			const {username, normalMsg, morseMsg} = data;
+			const li = createLi({op, username, normalMsg, morseMsg});
+			playNotification();
+			ul.append(li);
+		}
+
+		const swapMsgsHandler = e => {
+			e.preventDefault();
+
+			const op = getSwapMsgOp();
+			const liEls = document.querySelectorAll('li');
+			
+			liEls.forEach(li => {
+				const {username, normalMsg, morseMsg} = li.dataset;
+				li.innerHTML = `<b>${username}:</b> ${op === 0 ? normalMsg: morseMsg}`;
+			});
+
+			e.target.parentNode.dataset.op = op ^ 1;
+			if(parseInt(e.target.parentNode.dataset.op) === 1) {
+				e.target.parentNode.innerHTML = '<i class="fas fa-eye-slash"></i>';
+			}else {
+				e.target.parentNode.innerHTML = '<i class="fas fa-eye"></i>';
+			}
+
+			return false;
+		}
+
+		const displayUserIsTyping = data => {
+			updateInnerHTML('.chatInfo', `${data.username} is typing...`);
+		}
+
+		const userStoppedTyping = () => {
+			updateInnerHTML('.chatInfo', '');
+		}
+
+		{
+			const socket = io();
+			const m = document.querySelector('#m');
+			let username = localStorage.getItem('username');
+			const swapMsg = document.querySelector('#swapMsg');
+			const sendMessage = document.querySelector('#send-message');
+			
+
+			if(!username) {
+				createUsername(() => {
+					username = localStorage.getItem('username');
+					socket.emit('setUsername', username);
+				});
+			}else {
+				socket.emit('setUsername', username);
+			}
+
+			m.addEventListener('keydown', e => userIsTypingHandler(e, socket));
+			sendMessage.addEventListener('click', e => sendMessageHandler(e, username, socket));
+			swapMsg.addEventListener('click', swapMsgsHandler);
+
+			socket.on('userConnected', data => userConnectedHandler(data, username));
+			socket.on('typing', data => displayUserIsTyping(data));
+			socket.on('stopTyping', _ => userStoppedTyping());
+			socket.on('reciveMessage', reciveMessageHandler);
 
 
-        return false;
-      });
-
-
-      socket.on('reciveMessage', data => {
-        const op = parseInt(document.querySelector('#swapMsg').dataset.op);
-        const li = document.createElement('li');
-        li.dataset.username = data.username;
-        li.dataset.normalMsg = data.message;
-        li.dataset.morseMsg = data.morseMsg;
-        li.innerHTML = `<b>${data.username}:</b> ${op === 0 ? data.morseMsg : data.message}`;
-        ul.appendChild(li);
-      });
-    }
+		}
   </script>  
 </body>
 </html>

@@ -1,7 +1,11 @@
+* {
+  -webkit-font-smoothing: antialiased;
+}
+
 body {
   padding: 0;
   margin: 0;
-  font-family: sans-serif; 
+  font-family: 'Roboto', sans-serif;
   background-color: #181c22;
 }
 
@@ -18,6 +22,11 @@ main {
 
 .hide {
   display: none;
+}
+
+.site-title {
+  font-family: 'Roboto Mono', monospace;
+  color: #fff;
 }
 
 .username-form {
@@ -66,17 +75,31 @@ main {
   cursor: pointer;
 }
 
+.messages-control {
+  width: 100%;
+  max-width: 800px;
+  overflow: hidden;
+}
+
 .chatInfo {
   color: #fff;
-  margin: 0;
-  padding: 0;
+  position: relative;
+  margin-top: -35px;
+  padding: .35rem;
+  width: 43.6rem;
+  height: 20px;
+  line-height: 20px;
+  background: #2a2e33; /*#2a2e33*/
 }
 
 .messages {
   margin: 0;
   padding: 0.2rem;
   width: 90%;
-  background-color: #4d5156;
+  background-color: #2a2e33;
+  border-radius: 3px;
+  height: 20rem;
+  overflow-y: scroll;
 }
 
 .messages form {
@@ -84,13 +107,20 @@ main {
   width: 100%;
 }
 
-
 .messages li {
-  list-style: none;
   margin: 0;
-  padding: 0 0 0.1rem 0;
   color: #fff;
+  list-style: none;
+  padding: 0.5rem 0 0.2rem 0.2rem;
   border-bottom: 1px solid #403f3f;
+}
+
+.messages li:last-child {
+  margin: 0;
+  color: #fff;
+  list-style: none;
+  padding: 0.5rem 0 0.2rem 0.2rem;
+  border-bottom: 0;
 }
 
 .message-user {
@@ -102,11 +132,11 @@ main {
 }
 
 .message-input {
-  width: 80%;
+  width: 88%;
   padding: 0.1rem;
   font-size: 1rem;
-  line-height: 1rem;
-  height: 1.9rem;
+  line-height: 2.45rem;
+  height: 2.45rem;
   border: 0;
 }
 
@@ -115,8 +145,57 @@ main {
   border: 0;
   color: #fff;
   font-size: 1rem;
-  padding: 0.7rem 1rem;
+  padding: 0.73rem 1rem;
   border-radius: 2px;
   float: right;
   cursor: pointer;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+#swapMsg {
+  background: 0;
+  border: 0;
+  color: #fff;
+  font-size: 1.3rem;
+  margin-top: 8px;
+  line-height: 1.3rem;
+  cursor: pointer;
+}
+
+@media only screen and (max-width: 800px) {
+
+  main {
+    padding: 0.5rem;
+  }
+
+  .site-title {
+    font-size: 1.5rem;
+  }
+
+  .messages {
+    width: 100%;
+    height: 33rem;
+  }
+
+  .message-user {
+    width: 98.3%;
+    height: 42px;
+    background-color: #FFF;
+    padding: 0.2rem;
+    margin: 0;
+    margin-top: 0.4rem;
+  }
+  
+  .message-input {
+    width: 77%;
+  }
+
+  #swapMsg {
+    position: absolute;
+    top: 1rem;
+    right: -0.7rem;
+    font-size: 2rem;
+  }
+
 }
