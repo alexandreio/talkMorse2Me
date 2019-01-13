@@ -124,14 +124,15 @@
       
       sendButton.addEventListener('click', e => {
         e.preventDefault();
+        const op = parseInt(document.querySelector('#swapMsg').dataset.op);
         const m = document.querySelector('#m');
-        const msg = m.value;
+        const msg = m.value.normalize('NFD').replace(/[\u0300-\u036f]/g, "");
         const morseMsg = textToMorse(msg);
         const li = document.createElement('li');
         li.dataset.username = username;
         li.dataset.normalMsg = msg;
         li.dataset.MorseMsg = morseMsg;
-        li.innerHTML = `<b>${username}:</b> ${morseMsg}`;
+        li.innerHTML = `<b>${username}:</b> ${op === 0 ? morseMsg : msg}`;
         ul.appendChild(li);
         socket.emit('sendMessage', {username: username, message: msg, morseMsg: morseMsg});
         m.value = '';
@@ -142,7 +143,6 @@
         e.preventDefault();
         const changeToOp = parseInt(e.target.dataset.op);
         const liEls = document.querySelectorAll('li');
-        console.log(liEls.length);
 
         liEls.forEach(li => {
           li.innerHTML = `<b>${li.dataset.username}:</b> ${changeToOp === 0 ? li.dataset.normalMsg: li.dataset.MorseMsg}`;
@@ -161,12 +161,12 @@
 
 
       socket.on('reciveMessage', data => {
-        console.log(data);
+        const op = parseInt(document.querySelector('#swapMsg').dataset.op);
         const li = document.createElement('li');
         li.dataset.username = data.username;
         li.dataset.normalMsg = data.message;
         li.dataset.morseMsg = data.morseMsg;
-        li.innerHTML = `<b>${data.username}:</b> ${data.morseMsg}`;
+        li.innerHTML = `<b>${data.username}:</b> ${op === 0 ? data.morseMsg : data.message}`;
         ul.appendChild(li);
       });
     }

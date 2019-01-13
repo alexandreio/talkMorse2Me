@@ -16,10 +16,10 @@ app.get('/', (req, res, next) => {
 });
 
 io.on('connection', socket => {
-  console.log('a user connected');
+  socket.username = '';
 
   socket.on('disconnect', () => {
-    console.log('a user disconnected');
+    console.log(`The user ${socket.username} disconnect`);
   });
 
   socket.on('setUsername', username => {
